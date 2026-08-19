@@ -55,7 +55,7 @@
 
 ```text
 gh auth status --active --hostname HOST
-gh repo view --repo OWNER/NAME --json nameWithOwner,url,defaultBranchRef,isPrivate
+gh repo view OWNER/NAME --json nameWithOwner,url,defaultBranchRef,isPrivate
 gh issue list --repo OWNER/NAME --label LABEL --state open --limit 100 --json number,title,body,url,labels,updatedAt
 ```
 
