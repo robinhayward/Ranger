@@ -52,7 +52,7 @@ class GitHubClient:
         result = self._run(
             "repo",
             "view",
-            name,
+            self._repository_ref(name),
             "--json",
             "nameWithOwner,url,defaultBranchRef,isPrivate",
         )
@@ -78,18 +78,20 @@ class GitHubClient:
             "issue",
             "list",
             "--repo",
-            repository,
-            "--label",
-            label,
+            self._repository_ref(repository),
+            f"--label={label}",
             "--state",
             "open",
             "--limit",
-            "100",
+            "100",  # ponytail: bounded first slice; paginate if queues exceed it.
             "--json",
             "number,title,body,url,labels,updatedAt",
         )
         data = _json_array(result.stdout, f"issues for {repository}")
         return tuple(_issue(item, repository) for item in data)
+
+    def _repository_ref(self, name: str) -> str:
+        return f"{self.host}/{name}"
 
     def _run(
         self, *arguments: str, check: bool = True
@@ -114,12 +116,11 @@ def _issue(data: Any, repository: str) -> Issue:
     if not isinstance(data, dict):
         raise GitHubError(f"GitHub returned an invalid {context}")
     labels = _field(data, "labels", list, context)
-    label_names = tuple(
-        _field(label, "name", str, context)
-        if isinstance(label, dict)
-        else _invalid_label(context)
-        for label in labels
-    )
+    label_names = []
+    for label in labels:
+        if not isinstance(label, dict):
+            raise GitHubError(f"GitHub returned an invalid label for {context}")
+        label_names.append(_field(label, "name", str, context))
     body = data.get("body")
     if body is None:
         body = ""
@@ -131,7 +132,7 @@ def _issue(data: Any, repository: str) -> Issue:
         title=_field(data, "title", str, context),
         body=body,
         url=_field(data, "url", str, context),
-        labels=label_names,
+        labels=tuple(label_names),
         updated_at=_field(data, "updatedAt", str, context),
     )
 
@@ -166,7 +167,3 @@ def _field(
     ):
         raise GitHubError(f"GitHub returned an invalid {key} for {context}")
     return value
-
-
-def _invalid_label(context: str) -> str:
-    raise GitHubError(f"GitHub returned an invalid label for {context}")

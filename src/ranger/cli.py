@@ -31,7 +31,7 @@ def main(
         ]
         discoveries.sort(key=lambda discovery: discovery[0].name.casefold())
     except (ConfigError, GitHubError) as error:
-        print(f"ranger: {error}", file=sys.stderr)
+        print(f"ranger: {_terminal_text(str(error))}", file=sys.stderr)
         return 1
 
     if arguments.json_output:
@@ -100,7 +100,7 @@ def _document(label: str, discoveries: list[Discovery]) -> dict[str, object]:
 def _print_text(label: str, discoveries: list[Discovery]) -> None:
     issue_count = sum(len(issues) for _, issues in discoveries)
     if not issue_count:
-        print(f"No open issues labelled '{label}' were found.")
+        print(f"No open issues labelled '{_terminal_text(label)}' were found.")
         return
 
     suffix = "" if issue_count == 1 else "s"
@@ -111,14 +111,25 @@ def _print_text(label: str, discoveries: list[Discovery]) -> None:
         visibility = "private" if repository.private else "public"
         branch = repository.default_branch or "none"
         print()
-        print(f"{repository.name} ({visibility}, default branch: {branch})")
-        print(repository.url)
+        print(
+            f"{_terminal_text(repository.name)} "
+            f"({visibility}, default branch: {_terminal_text(branch)})"
+        )
+        print(_terminal_text(repository.url))
         for issue in issues:
             print()
-            print(f"#{issue.number} {issue.title}")
-            print(issue.url)
-            print(f"Updated: {issue.updated_at}")
-            print(f"Labels: {', '.join(issue.labels)}")
+            print(f"#{issue.number} {_terminal_text(issue.title)}")
+            print(_terminal_text(issue.url))
+            print(f"Updated: {_terminal_text(issue.updated_at)}")
+            print(f"Labels: {_terminal_text(', '.join(issue.labels))}")
             if issue.body:
                 print()
-                print(issue.body)
+                print(_terminal_text(issue.body))
+
+
+def _terminal_text(value: str) -> str:
+    return "".join(
+        character
+        for character in value
+        if character in "\n\t" or character.isprintable()
+    )

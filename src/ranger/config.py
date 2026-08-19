@@ -22,8 +22,18 @@ class Config:
             _validate_repository(repository)
         if not isinstance(self.label, str) or not self.label.strip():
             raise ConfigError("github.label must be a non-empty string")
-        if not isinstance(self.host, str) or not self.host.strip():
-            raise ConfigError("github.host must be a non-empty string")
+        if (
+            not isinstance(self.host, str)
+            or not self.host
+            or not self.host[0].isalnum()
+            or not self.host[-1].isalnum()
+            or ".." in self.host
+            or any(
+                not (character.isalnum() or character in ".-")
+                for character in self.host
+            )
+        ):
+            raise ConfigError("github.host must be a hostname without a scheme")
 
 
 def load_config(path: Path) -> Config:

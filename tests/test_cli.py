@@ -1,4 +1,5 @@
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import replace
 from io import StringIO
 import json
 from pathlib import Path
@@ -48,6 +49,18 @@ class FailingGitHubClient(FakeGitHubClient):
         raise GitHubError("GitHub authentication failed. Run gh auth login.")
 
 
+class UnsafeTextGitHubClient(FakeGitHubClient):
+    def issues(self, repository: str, label: str) -> tuple[Issue, ...]:
+        issue = super().issues(repository, label)[0]
+        return (
+            replace(
+                issue,
+                title="Add audit\x1b[31m export",
+                body="\x1b]52;c;ignored\x07Export accepted rows as CSV.",
+            ),
+        )
+
+
 class CliTests(unittest.TestCase):
     def run_cli(
         self,
@@ -85,6 +98,17 @@ class CliTests(unittest.TestCase):
             document["repositories"][0]["issues"][0]["labels"],
             ["agent-ready", "backend"],
         )
+
+    def test_human_output_strips_terminal_control_characters(self) -> None:
+        result, stdout, _ = self.run_cli(
+            ["run", "--repo", "acme/api"],
+            client_factory=UnsafeTextGitHubClient,
+        )
+
+        self.assertEqual(result, 0)
+        self.assertNotIn("\x1b", stdout)
+        self.assertNotIn("\x07", stdout)
+        self.assertIn("Export accepted rows as CSV.", stdout)
 
     def test_command_line_repositories_replace_configured_repositories(self) -> None:
         with TemporaryDirectory() as directory:

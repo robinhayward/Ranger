@@ -25,8 +25,5 @@ dependencies = []
 [project.scripts]
 ranger = "ranger.cli:entrypoint"
 
-[project.urls]
-Repository = "https://github.com/robinhayward/ranger"
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/ranger"]

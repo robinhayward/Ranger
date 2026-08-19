@@ -48,6 +48,20 @@ class LoadConfigTests(unittest.TestCase):
             ):
                 load_config(path)
 
+    def test_rejects_a_host_with_a_url_scheme(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "config.toml"
+            path.write_text(
+                '[github]\nrepositories = ["acme/api"]\n'
+                'host = "https://github.example.com"\n',
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                ConfigError, "github.host must be a hostname without a scheme"
+            ):
+                load_config(path)
+
 
 if __name__ == "__main__":
     unittest.main()

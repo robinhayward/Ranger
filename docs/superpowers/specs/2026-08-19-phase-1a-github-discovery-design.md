@@ -11,7 +11,7 @@ Phase 1A includes:
 - a `ranger run` command;
 - repositories supplied by TOML configuration or repeated `--repo OWNER/NAME` options;
 - GitHub CLI authentication validation;
-- read-only repository metadata and issue discovery;
+- read-only repository metadata and discovery of up to 100 matching issues per repository;
 - human-readable output and stable JSON output;
 - actionable failures for missing configuration, missing GitHub CLI, invalid authentication, malformed GitHub responses, and inaccessible repositories;
 - install and usage documentation.
@@ -66,7 +66,7 @@ The GitHub boundary executes argument arrays directly, never shell strings. It u
 
 All Phase 1A GitHub operations are read-only. Ranger stops with exit code `1` and a concise remedy when GitHub CLI is absent, authentication fails, an external command fails, or returned JSON does not satisfy Ranger's expected shape. Argument syntax errors continue to use argparse's exit code `2`.
 
-Ranger does not print tokens or subprocess environments. Error messages may include GitHub CLI stderr, stripped of surrounding whitespace, because that is necessary to diagnose repository access and authentication failures.
+Ranger does not print tokens or subprocess environments. Repository commands include the configured host so enterprise authentication and queries cannot diverge. Human-facing output removes non-printing control characters from untrusted GitHub and error text before writing it to a terminal; JSON output preserves the source data using JSON escaping. Error messages may include GitHub CLI stderr, stripped of surrounding whitespace, because that is necessary to diagnose repository access and authentication failures.
 
 ## Testing and Verification
 
