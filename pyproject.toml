@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ranger-agent"
+version = "0.1.0"
+description = "Local orchestration for evidence-backed coding agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = ["ai", "coding-agent", "github"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dependencies = []
+
+[project.scripts]
+ranger = "ranger.cli:entrypoint"
+
+[project.urls]
+Repository = "https://github.com/robinhayward/ranger"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ranger"]
