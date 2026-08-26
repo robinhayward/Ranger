@@ -681,7 +681,7 @@ Create a task-specific temporary directory with `mktemp -d`, set
 `UV_TOOL_DIR` and `UV_TOOL_BIN_DIR` inside it, and install the wheel:
 
 ```bash
-uv tool install --from dist/ranger_agent-0.2.0-py3-none-any.whl ranger-agent
+uv tool install dist/ranger_agent-0.2.0-py3-none-any.whl
 ```
 
 Run the isolated commands by absolute path:

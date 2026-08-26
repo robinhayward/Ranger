@@ -1,8 +1,12 @@
 # Ranger
 
-Ranger is a local, project-agnostic worker for coding agents. GitHub is the queue and audit trail; your developer machine is the execution environment.
+Ranger is a local, project-agnostic worker for coding agents. GitHub is the
+queue and audit trail; your developer machine is the execution environment.
 
-This repository currently contains **Phase 1A**: a read-only discovery command that finds up to 100 open GitHub issues labelled `agent-ready` per configured repository. It does not claim tickets, change repositories, invoke an agent, push branches, or open pull requests yet.
+Ranger `0.2.0` provides the Phase 1A read-only discovery through both a CLI and
+a local MCP server. It finds up to 100 open GitHub issues labelled
+`agent-ready` per configured repository. It does not claim tickets, change
+repositories, invoke an agent, push branches, or open pull requests yet.
 
 ## Requirements
 
@@ -17,19 +21,27 @@ gh auth login --hostname github.com
 
 ## Install
 
-From a Ranger checkout with [uv](https://docs.astral.sh/uv/):
+Install the current release directly from its Git tag with
+[uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv tool install .
+uv tool install "git+https://github.com/robinhayward/Ranger.git@v0.2.0"
 ```
 
-Or with pipx:
+Verify the installed version:
 
 ```bash
-pipx install .
+ranger --version
 ```
 
-The installed command is `ranger`; the Python distribution is `ranger-agent` because `ranger` is already used on PyPI.
+The installation provides `ranger` and `ranger-mcp`. The Python distribution is
+`ranger-agent` because `ranger` is already used on PyPI.
+
+To install an editable checkout for development instead:
+
+```bash
+uv tool install --editable .
+```
 
 ## Configure
 
@@ -67,19 +79,77 @@ For an AI tool or script, request one JSON document:
 ranger run --json
 ```
 
-No matching issues is a successful result. Configuration, authentication, access, command, and GitHub response errors exit with status `1` and print an actionable message to stderr.
+No matching issues is a successful result. Configuration, authentication,
+access, command, and GitHub response errors exit with status `1` and print an
+actionable message to stderr.
+
+## Use Ranger through MCP
+
+Register the installed local stdio server with Codex:
+
+```bash
+codex mcp add ranger -- ranger-mcp
+codex mcp list
+```
+
+Start or restart Codex in your project and ask it to use Ranger to list eligible
+issues. The `list_issues` tool can use the global configuration without
+arguments, or the agent can supply one-off repositories:
+
+```text
+list_issues()
+list_issues(repositories=["owner/sample"])
+```
+
+The optional tool inputs are `repositories`, `label`, `host`, and `config_path`.
+Explicit values replace the corresponding configuration for that call. The tool
+is read-only and returns structured repository and issue data.
+
+If the MCP host cannot find `ranger-mcp`, get its absolute path and register
+that instead:
+
+```bash
+command -v ranger-mcp
+codex mcp add ranger -- /absolute/path/to/ranger-mcp
+```
+
+## Update
+
+Install the newer Git tag explicitly. For example, when `v0.3.0` is published:
+
+```bash
+uv tool install --force "git+https://github.com/robinhayward/Ranger.git@v0.3.0"
+ranger --version
+```
+
+A pinned tag does not update itself; replace `v0.3.0` with the version you want
+to install.
+
+## Troubleshooting
+
+- Authentication errors: run `gh auth login --hostname github.com`.
+- Missing configuration: create `~/.config/ranger/config.toml` or give
+  `list_issues` an explicit `repositories` list.
+- MCP server missing: run `codex mcp list`, then register the absolute
+  `ranger-mcp` path as shown above.
+- GitHub Enterprise: set `host` in configuration or in the tool call, and
+  authenticate that hostname with `gh auth login --hostname HOST`.
 
 ## Develop
 
-The test suite uses only Python's standard library:
+Install the locked development environment and run all checks:
 
 ```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
-python -m compileall -q src tests
+uv sync
+uv run python -m unittest discover -s tests -v
+uv run python -m compileall -q src tests
 uv build
 ```
 
-The Phase 1A design and build plan are in [`docs/superpowers`](docs/superpowers). Later slices will add claiming and worktrees, agent execution, repository-defined checks, evidence gathering, and draft pull requests in that order.
+The Phase 1A and initial MCP designs and plans are in
+[`docs/superpowers`](docs/superpowers). Later slices will add claiming and
+worktrees, agent execution, repository-defined checks, evidence gathering, and
+draft pull requests in that order.
 
 ## License
 
