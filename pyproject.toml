@@ -20,10 +20,11 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
-dependencies = []
+dependencies = ["mcp>=2,<3"]
 
 [project.scripts]
 ranger = "ranger.cli:entrypoint"
+ranger-mcp = "ranger.mcp_server:main"
 
 [tool.hatch.version]
 path = "src/ranger/__init__.py"
