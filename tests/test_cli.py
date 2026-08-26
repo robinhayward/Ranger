@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+from ranger import __version__
 from ranger.cli import main
 from ranger.github import GitHubError, Issue, Repository
 
@@ -156,6 +157,15 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertEqual(stdout, "")
         self.assertIn("ranger: GitHub authentication failed", stderr)
+
+    def test_reports_package_version(self) -> None:
+        stdout = StringIO()
+        with redirect_stdout(stdout), self.assertRaises(SystemExit) as exit_context:
+            main(["--version"])
+
+        self.assertEqual(__version__, "0.2.0")
+        self.assertEqual(exit_context.exception.code, 0)
+        self.assertEqual(stdout.getvalue(), "ranger 0.2.0\n")
 
 
 if __name__ == "__main__":

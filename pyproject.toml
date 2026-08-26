@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ranger-agent"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Local orchestration for evidence-backed coding agents"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,6 +24,9 @@ dependencies = []
 
 [project.scripts]
 ranger = "ranger.cli:entrypoint"
+
+[tool.hatch.version]
+path = "src/ranger/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ranger"]

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import sys
 
+from . import __version__
 from .config import ConfigError, resolve_config
 from .discovery import ClientFactory, Discovery, discover, document
 from .github import GitHubClient, GitHubError
@@ -41,6 +42,11 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ranger",
         description="Run coding-agent work from GitHub on your machine.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     commands = parser.add_subparsers(dest="command", required=True)
     run = commands.add_parser(
