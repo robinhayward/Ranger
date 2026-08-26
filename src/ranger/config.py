@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import tomllib
@@ -57,6 +58,31 @@ def load_config(path: Path) -> Config:
         repositories=tuple(repositories),
         label=github.get("label", "agent-ready"),
         host=github.get("host", "github.com"),
+    )
+
+
+def resolve_config(
+    config_path: Path | None = None,
+    repositories: Sequence[str] | None = None,
+    label: str | None = None,
+    host: str | None = None,
+    *,
+    default_path: Path | None = None,
+) -> Config:
+    path = config_path or default_path or (
+        Path.home() / ".config" / "ranger" / "config.toml"
+    )
+    repository_values = None if repositories is None else tuple(repositories)
+    if config_path is not None or path.exists() or repository_values is None:
+        base = load_config(path)
+    else:
+        base = Config(repositories=repository_values)
+    return Config(
+        repositories=(
+            base.repositories if repository_values is None else repository_values
+        ),
+        label=base.label if label is None else label,
+        host=base.host if host is None else host,
     )
 
 

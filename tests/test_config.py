@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from ranger.config import ConfigError, load_config
+from ranger.config import ConfigError, load_config, resolve_config
 
 
 class LoadConfigTests(unittest.TestCase):
@@ -61,6 +61,45 @@ class LoadConfigTests(unittest.TestCase):
                 ConfigError, "github.host must be a hostname without a scheme"
             ):
                 load_config(path)
+
+    def test_resolves_explicit_repository_without_a_config_file(self) -> None:
+        config = resolve_config(
+            repositories=["acme/api"],
+            label="ready-for-agent",
+            host="github.example.com",
+            default_path=Path("/missing/ranger/config.toml"),
+        )
+
+        self.assertEqual(config.repositories, ("acme/api",))
+        self.assertEqual(config.label, "ready-for-agent")
+        self.assertEqual(config.host, "github.example.com")
+
+    def test_rejects_an_explicit_empty_repository_list(self) -> None:
+        with self.assertRaisesRegex(ConfigError, "at least one repository"):
+            resolve_config(
+                repositories=[],
+                default_path=Path("/missing/ranger/config.toml"),
+            )
+
+    def test_explicit_values_override_a_selected_config(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "config.toml"
+            path.write_text(
+                '[github]\nrepositories = ["configured/api"]\n'
+                'label = "configured"\nhost = "github.com"\n',
+                encoding="utf-8",
+            )
+
+            config = resolve_config(
+                config_path=path,
+                repositories=["override/web"],
+                label="agent-ready",
+                host="github.example.com",
+            )
+
+        self.assertEqual(config.repositories, ("override/web",))
+        self.assertEqual(config.label, "agent-ready")
+        self.assertEqual(config.host, "github.example.com")
 
 
 if __name__ == "__main__":

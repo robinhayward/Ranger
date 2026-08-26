@@ -1,16 +1,12 @@
 import argparse
-from collections.abc import Callable, Sequence
-from dataclasses import asdict
+from collections.abc import Sequence
 import json
 from pathlib import Path
 import sys
 
-from .config import Config, ConfigError, load_config
-from .github import GitHubClient, GitHubError, Issue, Repository
-
-
-ClientFactory = Callable[[str], GitHubClient]
-Discovery = tuple[Repository, tuple[Issue, ...]]
+from .config import ConfigError, resolve_config
+from .discovery import ClientFactory, Discovery, discover, document
+from .github import GitHubClient, GitHubError
 
 
 def main(
@@ -19,23 +15,19 @@ def main(
 ) -> int:
     arguments = _parser().parse_args(argv)
     try:
-        config = _config(arguments)
-        client = client_factory(config.host)
-        client.check_auth()
-        discoveries = [
-            (
-                client.repository(name),
-                tuple(sorted(client.issues(name, config.label), key=lambda issue: issue.number)),
-            )
-            for name in config.repositories
-        ]
-        discoveries.sort(key=lambda discovery: discovery[0].name.casefold())
+        config = resolve_config(
+            config_path=arguments.config,
+            repositories=arguments.repositories,
+            label=arguments.label,
+            host=arguments.host,
+        )
+        discoveries = discover(config, client_factory)
     except (ConfigError, GitHubError) as error:
         print(f"ranger: {_terminal_text(str(error))}", file=sys.stderr)
         return 1
 
     if arguments.json_output:
-        print(json.dumps(_document(config.label, discoveries), indent=2))
+        print(json.dumps(document(config.label, discoveries), indent=2))
     else:
         _print_text(config.label, discoveries)
     return 0
@@ -72,29 +64,6 @@ def _parser() -> argparse.ArgumentParser:
         "--json", action="store_true", dest="json_output", help="emit JSON"
     )
     return parser
-
-
-def _config(arguments: argparse.Namespace) -> Config:
-    default_path = Path.home() / ".config" / "ranger" / "config.toml"
-    path = arguments.config or default_path
-    if arguments.config or path.exists() or not arguments.repositories:
-        base = load_config(path)
-    else:
-        base = Config(repositories=tuple(arguments.repositories))
-    return Config(
-        repositories=tuple(arguments.repositories or base.repositories),
-        label=arguments.label or base.label,
-        host=arguments.host or base.host,
-    )
-
-
-def _document(label: str, discoveries: list[Discovery]) -> dict[str, object]:
-    repositories: list[dict[str, object]] = []
-    for repository, issues in discoveries:
-        item = asdict(repository)
-        item["issues"] = [asdict(issue) for issue in issues]
-        repositories.append(item)
-    return {"label": label, "repositories": repositories}
 
 
 def _print_text(label: str, discoveries: list[Discovery]) -> None:
